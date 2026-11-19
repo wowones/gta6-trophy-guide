@@ -5,8 +5,9 @@
 // Deterministic: no clock, no randomness, no network. MAKEFUN_OUTPUT_DIR stands in for /output locally.
 // Dossier caps below: 163840 text bytes, 4 screenshots x 262144 bytes, 993 app files, 50331648 app bytes.
 // The pre-build guard rejects oversized screenshots early so the dossier never exceeds those caps.
+// Build-time validation now also checks that the shipped trophy document has all 55 guides.
 
-import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-frontend.ts';
@@ -18,6 +19,12 @@ const shotDir = join(here, 'screenshots');
 
 if (!existsSync(join(appDir, 'index.html'))) throw new Error('app/index.html is missing');
 if (!existsSync(join(appDir, 'data', 'trophies.json'))) throw new Error('app/data/trophies.json is missing');
+
+const trophyDoc = JSON.parse(readFileSync(join(appDir, 'data', 'trophies.json'), 'utf8'));
+if (!Array.isArray(trophyDoc.trophies) || trophyDoc.trophies.length !== 55) {
+  throw new Error(`Expected 55 trophies in app/data/trophies.json, found ${Array.isArray(trophyDoc.trophies) ? trophyDoc.trophies.length : 'none'}`);
+}
+console.log(`gta6-trophy-guide: validated ${trophyDoc.trophies.length} trophy guides before dossier build`);
 
 const shotFiles = existsSync(shotDir)
   ? readdirSync(shotDir).filter(name => /\.(png|jpe?g)$/i.test(name)).sort()
