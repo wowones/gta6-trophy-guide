@@ -3,6 +3,8 @@
 // This program copies app/ and screenshots/ beside the output directory, then writes dossier.json
 // with the vendored make.fun library. Do not edit vendor/makefun-frontend.ts: the scorer byte-matches it.
 // Deterministic: no clock, no randomness, no network. MAKEFUN_OUTPUT_DIR stands in for /output locally.
+// Dossier caps below: 163840 text bytes, 4 screenshots x 262144 bytes, 993 app files, 50331648 app bytes.
+// The pre-build guard rejects oversized screenshots early so the dossier never exceeds those caps.
 
 import { cpSync, existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
