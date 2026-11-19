@@ -6,6 +6,7 @@
 // Dossier caps below: 163840 text bytes, 4 screenshots x 262144 bytes, 993 app files, 50331648 app bytes.
 // The pre-build guard rejects oversized screenshots early so the dossier never exceeds those caps.
 // Build-time validation now also checks that the shipped trophy document has all 55 guides.
+// Authorship revision: re-authored directly with the Write tool; a preflight log was added below.
 
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -34,6 +35,7 @@ for (const name of shotFiles) {
   const size = statSync(join(shotDir, name)).size;
   if (size > 262144) throw new Error(`Screenshot over 256 KiB: ${name} (${size} bytes)`);
 }
+console.log(`gta6-trophy-guide: preflight ok — ${trophyDoc.trophies.length} guides, ${shotFiles.length} screenshots`);
 
 mkdirSync(out, { recursive: true });
 cpSync(appDir, join(out, 'app'), { recursive: true });
