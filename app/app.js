@@ -1,52 +1,83 @@
-// A plain checklist of the 55 trophies: tick one off and it stays ticked (localStorage); export and import the ticks.
-const KEY = 'gta6-trophy-checklist';
-const rows = document.getElementById('rows');
-const grade = document.getElementById('grade');
-let earned = new Set(JSON.parse(localStorage.getItem(KEY) ?? '[]'));
-const doc = await (await fetch('data/trophies.json')).json();
+// Entry point: load data, wire the controls, and render after every state change.
+import * as data from './data.js';
+import { render, setFilterFn } from './ui.js';
+import { missableTrophy } from './roadmap.js';
 
-function save() {
-  localStorage.setItem(KEY, JSON.stringify([...earned]));
+const $ = id => document.getElementById(id);
+setFilterFn(() => data.filteredTrophies());
+
+function refresh() {
+  data.syncHash();
+  render(data.getState());
 }
 
-function render() {
-  rows.replaceChildren();
-  for (const t of doc.trophies) {
-    if (grade.value !== 'all' && t.grade !== grade.value) continue;
-    const tr = document.createElement('tr');
-    const box = document.createElement('input');
-    box.type = 'checkbox';
-    box.checked = earned.has(t.name);
-    box.addEventListener('change', () => {
-      if (box.checked) earned.add(t.name);
-      else earned.delete(t.name);
-      save();
-      render();
-    });
-    const cells = [box, `${t.name}\n${t.description}`, t.grade, t.guide];
-    for (const c of cells) {
-      const td = document.createElement('td');
-      if (typeof c === 'string') td.textContent = c;
-      else td.append(c);
-      tr.append(td);
+try {
+  const state = await data.load();
+  render(state);
+
+  document.querySelectorAll('[data-view]').forEach(button => {
+    button.addEventListener('click', () => { data.setView(button.dataset.view); refresh(); });
+  });
+
+  $('spoilers').addEventListener('click', () => { data.setSpoilers(!data.getState().spoilers); refresh(); });
+  $('grade').addEventListener('change', event => { data.setGrade(event.target.value); refresh(); });
+  $('category').addEventListener('change', event => { data.setCategory(event.target.value); refresh(); });
+  $('search').addEventListener('input', event => { data.setQuery(event.target.value); refresh(); });
+  $('only-hidden').addEventListener('change', event => { data.setHidden(event.target.checked); refresh(); });
+  $('only-missable').addEventListener('change', event => { data.setMissable(event.target.checked); refresh(); });
+
+  $('content').addEventListener('click', event => {
+    const target = event.target.closest('[data-action]');
+    if (!target) return;
+    if (target.dataset.action === 'toggle') {
+      event.stopPropagation();
+      data.toggleEarned(target.dataset.id);
+      refresh();
+      return;
     }
-    rows.append(tr);
-  }
-  document.getElementById('progress').textContent = `${earned.size} of ${doc.trophies.length} earned`;
-}
+    if (target.dataset.action === 'select') data.select(target.dataset.id);
+    refresh();
+  });
+  $('content').addEventListener('keydown', event => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    const target = event.target.closest('[data-action="select"]');
+    if (!target) return;
+    event.preventDefault();
+    data.select(target.dataset.id);
+    refresh();
+  });
+  $('save-banner').addEventListener('click', event => {
+    const button = event.target.closest('[data-missable]');
+    if (!button) return;
+    const miss = missableTrophy(data.getState().doc);
+    if (miss) { data.select(miss.id); data.setView('list'); refresh(); }
+  });
 
-document.getElementById('export').addEventListener('click', () => {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify([...earned])], { type: 'application/json' }));
-  a.download = 'trophy-progress.json';
-  a.click();
-});
-document.getElementById('import').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  earned = new Set(JSON.parse(await file.text()));
-  save();
-  render();
-});
-grade.addEventListener('change', render);
-render();
+  $('export').addEventListener('click', () => {
+    const blob = new Blob([data.exportProgress()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'gta6-trophy-progress.json';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  });
+  $('import').addEventListener('change', async event => {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    try {
+      const count = data.importProgress(await file.text());
+      $('footer-status').textContent = `imported ${count} earned trophies`;
+    } catch (error) {
+      $('footer-status').textContent = `import failed: ${error.message}`;
+    }
+    event.target.value = '';
+    refresh();
+  });
+
+  window.addEventListener('hashchange', () => { data.readHash(); render(data.getState()); });
+  $('footer-status').textContent = `${state.doc.trophies.length} guides · localStorage progress · no network calls`;
+} catch (error) {
+  $('content').innerHTML = `<div class="empty">Could not start the guide: ${String(error.message || error)}</div>`;
+  $('footer-status').textContent = 'startup error';
+}

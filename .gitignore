@@ -1,3 +1,5 @@
 node_modules/
 out/
+out2/
 *.tar.gz
+*.log

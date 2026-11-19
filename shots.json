@@ -1,5 +1,31 @@
 [
-  { "file": "1-checklist.jpg", "path": "/", "viewport": { "width": 1280, "height": 800 } },
-  { "file": "2-silver.jpg", "path": "/", "grade": "silver", "viewport": { "width": 1280, "height": 800 } },
-  { "file": "3-bronze.jpg", "path": "/", "grade": "bronze", "scroll": 1400, "viewport": { "width": 1280, "height": 800 } }
+  {
+    "file": "01-cover.jpg",
+    "path": "/",
+    "hash": "trophy=14",
+    "viewport": { "width": 1280, "height": 800 },
+    "grade": "all",
+    "description": "Checklist, grade/category filters, progress, spoilers off and an open cited guide"
+  },
+  {
+    "file": "02-roadmap.jpg",
+    "path": "/",
+    "hash": "view=roadmap",
+    "viewport": { "width": 1280, "height": 800 },
+    "description": "Eight-step roadmap to the platinum with the save warning"
+  },
+  {
+    "file": "03-missable.jpg",
+    "path": "/",
+    "hash": "view=missable&spoilers=on",
+    "viewport": { "width": 1280, "height": 800 },
+    "description": "Missable and hidden filter with spoilers on and the missable flag visible"
+  },
+  {
+    "file": "04-detail.jpg",
+    "path": "/",
+    "hash": "trophy=37&spoilers=on",
+    "viewport": { "width": 1280, "height": 800 },
+    "description": "Detail panel for a secret trophy with clickable sources"
+  }
 ]
